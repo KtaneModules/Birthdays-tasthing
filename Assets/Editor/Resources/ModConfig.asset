@@ -14,10 +14,9 @@ MonoBehaviour:
   id: birthdays
   title: Bithdays
   author: TasThing
-  description: 'Who knew Lil Tecca and Mother Teresa had something in common?
-
-
-    Module idea by Nico Robin, implementation by TasThing.'
+  description: "Who knew Lil Tecca and Mother Teresa had something in common?\r\n\r\nModule
+    idea by Nico Robin, implementation by TasThing.\r\n\r\nManual HTML: https://ktane.timwi.de/HTML/Birthdays.html\r\nManual
+    PDF: https://ktane.timwi.de/PDF/Birthdays.pdf"
   version: 
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 4d783e9dd14c5d243ba92244ba89525b, type: 3}
