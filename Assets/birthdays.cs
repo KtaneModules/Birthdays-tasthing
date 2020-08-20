@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KModkit;
-using rnd = UnityEngine.Random;
 using System.Text.RegularExpressions;
+using rnd = UnityEngine.Random;
 
 public class birthdays : MonoBehaviour
 {
@@ -29,6 +29,7 @@ public class birthdays : MonoBehaviour
     private static int moduleIdCounter = 1;
     private int moduleId;
     private bool moduleSolved;
+    private bool bombSolved;
 
     void Awake()
     {
@@ -36,6 +37,8 @@ public class birthdays : MonoBehaviour
         module.OnNeedyActivation += OnNeedyActivation;
         module.OnNeedyDeactivation += OnNeedyDeactivation;
         module.OnTimerExpired += OnTimerExpired;
+        bomb.OnBombExploded += delegate () { bombSolved = true; };
+        bomb.OnBombSolved += delegate () { bombSolved = true; };
         screen.OnInteract += delegate () { PressScreen(); return false; };
         left.OnInteract += delegate () { PressLeft(); return false; };
         right.OnInteract += delegate () { PressRight(); return false; };
@@ -60,6 +63,7 @@ public class birthdays : MonoBehaviour
         rightText.text = rnd.Range(1, 13).ToString("00");
         index = rnd.Range(0, ids.Length);
         screenText.text = ids[index];
+        Debug.LogFormat("[Birthdays #{0}] The display says {1}. Submit {2} {3}.", moduleId, ids[index], days[index], months[index]);
     }
 
     protected void OnNeedyDeactivation()
@@ -92,7 +96,7 @@ public class birthdays : MonoBehaviour
         if (!active)
             return;
         leftText.text = ((Array.IndexOf(Enumerable.Range(0, 31).Select(x => x.ToString("00")).ToArray(), leftText.text)) + 1).ToString("00");
-        if (leftText.text == "32")
+        if (leftText.text == "00")
             leftText.text = "01";
     }
 
@@ -113,6 +117,58 @@ public class birthdays : MonoBehaviour
         {
             module.OnStrike();
             OnNeedyDeactivation();
+        }
+    }
+
+    // Twitch Plays
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = "!{0} 31 12 [Submits December 31st. Single digit numbers must be submitted with leading zeroes, e.g. March 5th is 05 03.]";
+    #pragma warning restore 414
+
+    IEnumerator ProcessTwitchCommand(string cmd)
+    {
+        var input = cmd.Trim().ToLowerInvariant().Split(' ').ToArray();
+        if (input.Length != 2 || !Enumerable.Range(1, 31).Select(x => x.ToString("00")).ToArray().Contains(input[0]) || !Enumerable.Range(1, 12).Select(x => x.ToString("00")).ToArray().Contains(input[1]))
+            yield break;
+        yield return null;
+        while (leftText.text != input[0])
+        {
+            left.OnInteract();
+            yield return new WaitForSeconds(.1f);
+        }
+        while (rightText.text != input[1])
+        {
+            right.OnInteract();
+            yield return new WaitForSeconds(.1f);
+        }
+        yield return new WaitForSeconds(.1f);
+        screen.OnInteract();
+    }
+
+    void TwitchHandleForcedSolve()
+    {
+        //The code is done in a coroutine instead of here so that if the solvebomb command was executed this will just input the number right when it activates and it wont wait for its turn in the queue
+        StartCoroutine(HandleSolve());
+    }
+
+    IEnumerator HandleSolve()
+    {
+        while (!bombSolved)
+        {
+            while (!active)
+                yield return new WaitForSeconds(.1f);
+            while (leftText.text != days[index])
+            {
+                left.OnInteract();
+                yield return new WaitForSeconds(.1f);
+            }
+            while (rightText.text != months[index])
+            {
+                right.OnInteract();
+                yield return new WaitForSeconds(.1f);
+            }
+            yield return new WaitForSeconds(.1f);
+            screen.OnInteract();
         }
     }
 }
